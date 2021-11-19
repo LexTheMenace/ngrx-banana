@@ -1,27 +1,129 @@
 # NgrxBanana
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 12.2.6.
+Original: https://www.youtube.com/watch?v=272KDxSIQBw
 
-## Development server
+## Step 1
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Create banana.state.ts, create and export a state interface, and initialState.
 
-## Code scaffolding
+```ts
+export interface State {
+  isPeeled: boolean;
+  bitesRemaining: number;
+  color: string;
+}
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+export const initialState: State = {} as State;
+```
 
-## Build
+## Step 2
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+Create banana.actions.ts, create and export an Action and type to get a new banana.
 
-## Running unit tests
+```ts
+import { Action } from "@ngrx/store";
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+export const GET_NEW_BANANA = "Get New Banana";
 
-## Running end-to-end tests
+export class GetNewBanana implements Action {
+  readonly type: string = GET_NEW_BANANA;
+  constructor(public payload: any) {
+    console.log("ACTION: " + GET_NEW_BANANA);
+  }
+}
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+export type BananaAction = GetNewBanana;
+```
 
-## Further help
+## Step 3
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+Create banana.reducer.ts, create and export a reducer.
+
+```ts
+import { BananaAction, GET_NEW_BANANA } from "finished-src/app/banana/state";
+
+export function reducer(state: any, action: BananaAction) {
+  switch (action.type) {
+    case GET_NEW_BANANA:
+      return {
+        isPeeled: false,
+        bitesRemaining: 9,
+        color: "yellow",
+      };
+    default:
+      return {
+        ...state,
+      };
+  }
+}
+```
+
+## Step 4
+
+Create and index for banana/state and export the reducer, actions, and state.
+
+```ts
+export { reducer } from "./banana.reducer";
+export * from "./banana.actions";
+export { State, initialState } from "./banana.state";
+```
+
+## Step 5
+
+Create app.state.ts. Create and export an interface for AppState with a banana property
+
+```ts
+import { ActionReducerMap } from "@ngrx/store";
+import * as bananaStore from "./banana/state";
+
+export interface AppState {
+  banana: bananaStore.State;
+}
+
+export const initialState: AppState = {
+  banana: bananaStore.initialState,
+};
+
+export const reducers: ActionReducerMap<AppState, any> = {
+  banana: bananaStore.reducer,
+};
+
+export const getMyBanana = (s: AppState) => s.banana;
+```
+
+## Step 6 - Update App Module
+
+Add StoreModule to
+app.module's imports array, and pass the reducer map from app.state.ts.
+
+```ts
+imports: [
+  // ...
+  StoreModule.forRoot(reducers)
+],
+```
+
+## Step 7 - Dispatch From Component
+
+Add an observable for our banana state in the banana.component.ts file.
+Then add a function to dispatch an action to get a new banana.
+
+```ts
+banana$!: Observable<any>;
+
+constructor(private store: Store<AppState>) {
+}
+
+ngOnInit() {
+  this.newBanana();
+  this.banana$ = this.store.pipe(select(getMyBanana));
+}
+
+newBanana() {
+  this.store.dispatch(new GetNewBanana(null));
+}
+```
+
+## Step 8 - Adding More Actions
+
+Repeat the process of adding an action, case in the reducer, and dispatch function in the component for peeling and eating a banana.
